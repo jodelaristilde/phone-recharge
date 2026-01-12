@@ -25,29 +25,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     loadRequests();
-    
-    const checkDailyReset = async () => {
-      const today = new Date().toLocaleDateString();
-      if (currentDate !== today) {
-        setRequests([]);
-        setSelectedIds([]);
-        setCurrentDate(today);
-        try {
-          await fetch('/api/requests', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: [], date: today })
-          });
-        } catch (error) {
-          console.log('Daily reset completed');
-        }
-      }
-    };
-    
-    checkDailyReset();
-    const interval = setInterval(checkDailyReset, 60000);
+
+    // Auto-refresh requests every 30 seconds to see updates from other admins
+    const interval = setInterval(() => {
+      loadRequests();
+    }, 30000);
+
     return () => clearInterval(interval);
-  }, [currentDate]);
+  }, []);
 
   const loadRequests = async () => {
     try {
