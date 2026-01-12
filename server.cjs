@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -196,9 +197,86 @@ app.get("/api/history", (req, res) => {
   }
 });
 
+// API endpoint for daily reset (cron job)
+app.post("/api/cron/daily-reset", (req, res) => {
+  try {
+    // Verify cron secret
+    const authHeader = req.headers.authorization;
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+      console.log("Unauthorized daily reset attempt");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    console.log("Running daily reset cron job...");
+
+    // Get current data
+    let currentData = { requests: [], date: "" };
+    if (fs.existsSync(DATA_FILE)) {
+      currentData = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    }
+
+    if (currentData.requests && currentData.requests.length > 0) {
+      // Calculate total sold for the day
+      const totalSold = currentData.requests.reduce((sum, req) => sum + (req.amount || 0), 0);
+
+      // Get existing history
+      let history = [];
+      if (fs.existsSync(HISTORY_FILE)) {
+        history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
+      }
+
+      // Add today's data to history
+      const historyEntry = {
+        date: currentData.date || new Date().toLocaleDateString(),
+        totalSold: totalSold,
+        totalRequests: currentData.requests.length,
+        timestamp: new Date().toISOString()
+      };
+
+      history.push(historyEntry);
+
+      // Keep only last 30 days of history
+      const last30Days = history
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 30);
+
+      // Save updated history
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(last30Days, null, 2));
+
+      console.log("History saved:", historyEntry);
+    }
+
+    // Reset current data
+    const today = new Date().toLocaleDateString();
+    const resetData = {
+      requests: [],
+      date: today
+    };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(resetData, null, 2));
+
+    console.log("Daily reset completed successfully");
+
+    res.json({
+      success: true,
+      message: "Daily reset completed",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error during daily reset:", error);
+    res.status(500).json({ error: "Failed to complete daily reset" });
+  }
+});
+
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Serve test page
+app.get("/test-reset.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "test-reset.html"));
 });
 
 // Serve static files from dist directory

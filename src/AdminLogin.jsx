@@ -26,7 +26,7 @@ const AdminLogin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        login();
+        login(username);
         navigate('/admin/dashboard');
       } else {
         setError(data.error || 'Invalid username or password');

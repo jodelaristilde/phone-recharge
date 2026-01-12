@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const [createSuccess, setCreateSuccess] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
 
   useEffect(() => {
     loadRequests();
@@ -492,62 +492,64 @@ const AdminDashboard = () => {
               </div>
 
               <div className="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
-                {/* Create Account Form */}
-                <div className="mb-6 bg-gray-700 rounded-lg p-6 border-2 border-purple-600">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
-                    <UserPlus className="w-5 h-5" />
-                    Create New Account
-                  </h3>
-                  <form onSubmit={handleCreateUser} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-400 mb-2">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        placeholder="Enter username (min 3 characters)"
-                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
-                        disabled={isCreating}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-400 mb-2">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter password (min 6 characters)"
-                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
-                        disabled={isCreating}
-                      />
-                    </div>
-
-                    {createError && (
-                      <div className="p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-lg">
-                        <p className="text-center text-red-100 text-sm">{createError}</p>
-                      </div>
-                    )}
-
-                    {createSuccess && (
-                      <div className="p-3 bg-green-900 bg-opacity-50 border border-green-600 rounded-lg">
-                        <p className="text-center text-green-100 text-sm">{createSuccess}</p>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isCreating}
-                      className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
+                {/* Create Account Form - Only visible to admin */}
+                {currentUser === 'admin' && (
+                  <div className="mb-6 bg-gray-700 rounded-lg p-6 border-2 border-purple-600">
+                    <h3 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
                       <UserPlus className="w-5 h-5" />
-                      {isCreating ? 'Creating Account...' : 'Create Account'}
-                    </button>
-                  </form>
-                </div>
+                      Create New Account
+                    </h3>
+                    <form onSubmit={handleCreateUser} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-400 mb-2">
+                          Username
+                        </label>
+                        <input
+                          type="text"
+                          value={newUsername}
+                          onChange={(e) => setNewUsername(e.target.value)}
+                          placeholder="Enter username (min 3 characters)"
+                          className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
+                          disabled={isCreating}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-400 mb-2">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter password (min 6 characters)"
+                          className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
+                          disabled={isCreating}
+                        />
+                      </div>
+
+                      {createError && (
+                        <div className="p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-lg">
+                          <p className="text-center text-red-100 text-sm">{createError}</p>
+                        </div>
+                      )}
+
+                      {createSuccess && (
+                        <div className="p-3 bg-green-900 bg-opacity-50 border border-green-600 rounded-lg">
+                          <p className="text-center text-green-100 text-sm">{createSuccess}</p>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={isCreating}
+                        className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <UserPlus className="w-5 h-5" />
+                        {isCreating ? 'Creating Account...' : 'Create Account'}
+                      </button>
+                    </form>
+                  </div>
+                )}
 
                 {/* Users List */}
                 <div>
@@ -572,13 +574,15 @@ const AdminDashboard = () => {
                                 Created: {new Date(user.createdAt).toLocaleDateString()}
                               </p>
                             </div>
-                            <button
-                              onClick={() => handleDeleteUser(user.username)}
-                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
+                            {currentUser === 'admin' && (
+                              <button
+                                onClick={() => handleDeleteUser(user.username)}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}

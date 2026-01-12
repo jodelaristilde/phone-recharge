@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>SessionStorage Auth Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testCheck()">Check Auth</button>
+    <button onclick="testClear()">Clear Auth</button>
+    <div id="output"></div>
+
+    <script>
+        function testLogin() {
+            sessionStorage.setItem("adminAuthenticated", "true");
+            sessionStorage.setItem("currentUser", "admin");
+            console.log("Login test - Set items");
+            testCheck();
+        }
+
+        function testCheck() {
+            const auth = sessionStorage.getItem("adminAuthenticated");
+            const user = sessionStorage.getItem("currentUser");
+            document.getElementById("output").innerHTML =
+                `Auth: ${auth}<br>User: ${user}<br>IsAuth: ${auth === "true"}`;
+            console.log("Check:", { auth, user });
+        }
+
+        function testClear() {
+            sessionStorage.clear();
+            console.log("Cleared");
+            testCheck();
+        }
+
+        // Auto check on load
+        testCheck();
+    </script>
+</body>
+</html>
