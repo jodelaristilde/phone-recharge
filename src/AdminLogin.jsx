@@ -61,7 +61,7 @@ const AdminLogin = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Enter Username"
                   className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white rounded-lg focus:border-orange-500 focus:outline-none text-lg placeholder-gray-400"
                 />
               </div>
@@ -77,7 +77,7 @@ const AdminLogin = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Enter Password"
                   className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white rounded-lg focus:border-orange-500 focus:outline-none text-lg placeholder-gray-400"
                 />
               </div>
