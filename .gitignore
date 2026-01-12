@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Local development data files (don't commit user data)
+users.json
+history.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

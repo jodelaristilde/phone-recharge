@@ -1,3 +1,6 @@
+import { kv } from '@vercel/kv';
+import bcrypt from 'bcryptjs';
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -17,19 +20,31 @@ export default async function handler(req, res) {
   try {
     const { username, password } = req.body;
 
-    // Get admin credentials from environment variables
+    console.log('Login attempt:', { username });
+
+    // First, check environment variable admin credentials
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
 
-    console.log('Login attempt:', { username });
-
     if (username === adminUsername && password === adminPassword) {
-      console.log('Login successful');
+      console.log('Login successful (env admin)');
       return res.json({ success: true });
-    } else {
-      console.log('Login failed: Invalid credentials');
-      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Then, check registered users in KV
+    const users = await kv.get('phone-recharge-users') || [];
+    const user = users.find(u => u.username === username);
+
+    if (user) {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (passwordMatch) {
+        console.log('Login successful (registered user)');
+        return res.json({ success: true });
+      }
+    }
+
+    console.log('Login failed: Invalid credentials');
+    return res.status(401).json({ error: 'Invalid credentials' });
   } catch (error) {
     console.error('Error verifying credentials:', error);
     return res.status(500).json({ error: 'Failed to verify credentials' });

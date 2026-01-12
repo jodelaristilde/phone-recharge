@@ -33,9 +33,12 @@ Before deploying, add these environment variables in Vercel:
 ```
 ADMIN_USERNAME=your_admin_username
 ADMIN_PASSWORD=your_secure_password
+CRON_SECRET=generate-a-random-string-here
 ```
 
-**IMPORTANT:** Change these from the default values for security!
+**IMPORTANT:**
+- Change ADMIN_USERNAME and ADMIN_PASSWORD from the default values for security!
+- Generate a strong random string for CRON_SECRET (e.g., use an online generator or `openssl rand -base64 32`)
 
 ## Step 4: Set Up Vercel KV Storage
 
@@ -116,21 +119,48 @@ phone-recharge/
 ├── api/                    # Serverless API functions
 │   ├── requests.js        # GET/POST /api/requests
 │   ├── health.js          # GET /api/health
-│   └── admin/
-│       └── login.js       # POST /api/admin/login
+│   ├── history.js         # GET /api/history (last 7 days)
+│   ├── admin/
+│   │   ├── login.js       # POST /api/admin/login
+│   │   └── register.js    # POST /api/admin/register
+│   └── cron/
+│       └── daily-reset.js # Daily reset at 3 AM
 ├── src/                   # React frontend
 ├── dist/                  # Built frontend (generated)
-├── vercel.json           # Vercel configuration
+├── vercel.json           # Vercel configuration (includes cron)
 └── .env.example          # Environment variable template
 ```
+
+## Features
+
+### User Account Creation
+- Create new admin accounts from the login page
+- Click "Create Account" button on login page
+- Passwords are securely hashed using bcrypt
+- Multiple admins can access the dashboard
+
+### History Tracking
+- View last 7 days of sales history
+- Click "History" button on admin dashboard
+- Shows date, total sold amount, and number of requests per day
+- History is preserved even after daily reset
+
+### Daily Reset (3 AM)
+- Dashboard automatically resets at 3 AM daily
+- All requests are cleared
+- Total sold resets to $0
+- Previous day's data is saved to history before reset
+- Runs via Vercel Cron Jobs (configured in vercel.json)
 
 ## Security Notes
 
 1. **Never commit** `.env` files with real credentials
-2. Use strong passwords for `ADMIN_PASSWORD`
+2. Use strong passwords for `ADMIN_PASSWORD` and `CRON_SECRET`
 3. Admin credentials are stored as environment variables (not in KV or files)
-4. Consider adding rate limiting for production use
-5. HTTPS is automatically enabled by Vercel
+4. User passwords are hashed with bcrypt before storage
+5. Cron job is protected by CRON_SECRET to prevent unauthorized resets
+6. Consider adding rate limiting for production use
+7. HTTPS is automatically enabled by Vercel
 
 ## Costs
 

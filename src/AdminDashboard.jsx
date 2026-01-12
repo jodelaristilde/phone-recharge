@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square } from 'lucide-react';
+import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 const AdminDashboard = () => {
@@ -9,6 +9,17 @@ const AdminDashboard = () => {
   const [showQR, setShowQR] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -105,7 +116,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const totalSold = requests.reduce((sum, req) => sum + req.amount, 0);
+  const totalSold = requests.reduce((sum, req) => sum + (req.amount || 0), 0);
   const completedCount = requests.filter(req => req.completed).length;
 
   const getCustomerURL = () => {
@@ -116,6 +127,102 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/admin');
+  };
+
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch('/api/history');
+      const data = await response.json();
+      setHistory(data.history || []);
+    } catch (error) {
+      console.error('Error loading history:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleShowHistory = () => {
+    setShowHistory(true);
+    loadHistory();
+  };
+
+  const loadUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const response = await fetch('/api/admin/users');
+      const data = await response.json();
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleShowUsers = () => {
+    setShowUsers(true);
+    loadUsers();
+  };
+
+  const handleDeleteUser = async (username) => {
+    const confirmed = window.confirm(`Are you sure you want to delete user "${username}"?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+
+      if (response.ok) {
+        // Reload users list
+        loadUsers();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateError('');
+    setCreateSuccess('');
+    setIsCreating(true);
+
+    try {
+      const response = await fetch('/api/admin/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: newUsername, password: newPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCreateSuccess('Account created successfully!');
+        setNewUsername('');
+        setNewPassword('');
+        // Reload users list
+        loadUsers();
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setCreateSuccess('');
+        }, 3000);
+      } else {
+        setCreateError(data.error || 'Failed to create account');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      setCreateError('Failed to connect to server');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -137,6 +244,20 @@ const AdminDashboard = () => {
               >
                 <QrCode className="w-5 h-5" />
                 {showQR ? 'Hide' : 'Show'} QR Code
+              </button>
+              <button
+                onClick={handleShowHistory}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <History className="w-5 h-5" />
+                History
+              </button>
+              <button
+                onClick={handleShowUsers}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+              >
+                <Users className="w-5 h-5" />
+                Users
               </button>
               <button
                 onClick={handleLogout}
@@ -268,7 +389,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-300">{req.timestamp}</td>
                       <td className="px-6 py-4 text-sm font-medium text-white">{req.phoneNumber}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-orange-400">${req.amount.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-orange-400">${(req.amount || 0).toFixed(2)}</td>
                       <td className="px-6 py-4">
                         {req.completed ? (
                           <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-700 text-green-100 rounded-full text-sm font-medium">
@@ -300,6 +421,175 @@ const AdminDashboard = () => {
             </table>
           </div>
         </div>
+
+        {showHistory && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <h2 className="text-2xl font-bold text-orange-400 flex items-center gap-2">
+                  <History className="w-6 h-6" />
+                  Last 7 Days History
+                </h2>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
+                {isLoadingHistory ? (
+                  <div className="text-center py-8 text-gray-400">Loading history...</div>
+                ) : history.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">No history available yet</div>
+                ) : (
+                  <div className="space-y-4">
+                    {history.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-orange-600 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-white font-semibold text-lg flex items-center gap-2">
+                              <Calendar className="w-5 h-5 text-orange-400" />
+                              {entry.date}
+                            </p>
+                            <p className="text-gray-400 text-sm mt-1">
+                              {entry.totalRequests || 0} request(s)
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-orange-400 font-semibold mb-1">Total Sold</p>
+                            <p className="text-3xl font-bold text-white">
+                              ${(entry.totalSold || 0).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUsers && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <h2 className="text-2xl font-bold text-purple-400 flex items-center gap-2">
+                  <Users className="w-6 h-6" />
+                  User Management
+                </h2>
+                <button
+                  onClick={() => setShowUsers(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
+                {/* Create Account Form */}
+                <div className="mb-6 bg-gray-700 rounded-lg p-6 border-2 border-purple-600">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
+                    <UserPlus className="w-5 h-5" />
+                    Create New Account
+                  </h3>
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-400 mb-2">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        placeholder="Enter username (min 3 characters)"
+                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
+                        disabled={isCreating}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-400 mb-2">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter password (min 6 characters)"
+                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-purple-500 focus:outline-none"
+                        disabled={isCreating}
+                      />
+                    </div>
+
+                    {createError && (
+                      <div className="p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-lg">
+                        <p className="text-center text-red-100 text-sm">{createError}</p>
+                      </div>
+                    )}
+
+                    {createSuccess && (
+                      <div className="p-3 bg-green-900 bg-opacity-50 border border-green-600 rounded-lg">
+                        <p className="text-center text-green-100 text-sm">{createSuccess}</p>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isCreating}
+                      className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                      {isCreating ? 'Creating Account...' : 'Create Account'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Users List */}
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">Registered Users</h3>
+                  {isLoadingUsers ? (
+                    <div className="text-center py-8 text-gray-400">Loading users...</div>
+                  ) : users.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">No registered users yet</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {users.map((user, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-purple-600 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-white font-semibold text-lg">
+                                {user.username}
+                              </p>
+                              <p className="text-gray-400 text-sm mt-1">
+                                Created: {new Date(user.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteUser(user.username)}
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

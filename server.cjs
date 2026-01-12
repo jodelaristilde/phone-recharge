@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(cors());
@@ -9,6 +10,8 @@ app.use(express.json());
 
 const DATA_FILE = path.join(__dirname, "data.json");
 const ADMIN_FILE = path.join(__dirname, "admin.json");
+const USERS_FILE = path.join(__dirname, "users.json");
+const HISTORY_FILE = path.join(__dirname, "history.json");
 
 // API endpoint to get requests
 app.get("/api/requests", (req, res) => {
@@ -36,21 +39,160 @@ app.post("/api/requests", (req, res) => {
 app.post("/api/admin/login", (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log("Login attempt:", { username, password });
-    
+    console.log("Login attempt:", { username });
+
+    // First check admin.json (plain password for backward compatibility)
     const adminData = JSON.parse(fs.readFileSync(ADMIN_FILE, "utf8"));
-    console.log("Admin data from file:", adminData);
-    
+
     if (username === adminData.username && password === adminData.password) {
-      console.log("Login successful");
-      res.json({ success: true });
-    } else {
-      console.log("Login failed: Invalid credentials");
-      res.status(401).json({ error: "Invalid credentials" });
+      console.log("Login successful (admin)");
+      return res.json({ success: true });
     }
+
+    // Then check users.json (hashed passwords)
+    if (fs.existsSync(USERS_FILE)) {
+      const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+      const user = users.find(u => u.username === username);
+
+      if (user && bcrypt.compareSync(password, user.password)) {
+        console.log("Login successful (registered user)");
+        return res.json({ success: true });
+      }
+    }
+
+    console.log("Login failed: Invalid credentials");
+    res.status(401).json({ error: "Invalid credentials" });
   } catch (error) {
     console.error("Error verifying credentials:", error);
     res.status(500).json({ error: "Failed to verify credentials" });
+  }
+});
+
+// API endpoint to register new users
+app.post("/api/admin/register", (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+
+    if (username.length < 3) {
+      return res.status(400).json({ error: "Username must be at least 3 characters" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    // Get existing users
+    let users = [];
+    if (fs.existsSync(USERS_FILE)) {
+      users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+    }
+
+    // Check if username already exists
+    const existingUser = users.find(u => u.username === username);
+    if (existingUser) {
+      return res.status(409).json({ error: "Username already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    // Add new user
+    const newUser = {
+      username,
+      password: hashedPassword,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+
+    // Save users
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+    console.log("User registered successfully:", username);
+    res.json({ success: true, message: "Account created successfully" });
+  } catch (error) {
+    console.error("Error registering user:", error);
+    res.status(500).json({ error: "Failed to create account" });
+  }
+});
+
+// API endpoint to get all users
+app.get("/api/admin/users", (req, res) => {
+  try {
+    let users = [];
+    if (fs.existsSync(USERS_FILE)) {
+      users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+    }
+
+    // Return users without passwords
+    const safeUsers = users.map(user => ({
+      username: user.username,
+      createdAt: user.createdAt
+    }));
+
+    res.json({ users: safeUsers });
+  } catch (error) {
+    console.error("Error loading users:", error);
+    res.status(500).json({ error: "Failed to load users" });
+  }
+});
+
+// API endpoint to delete a user
+app.delete("/api/admin/users", (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    if (!fs.existsSync(USERS_FILE)) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get existing users
+    let users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+
+    // Filter out the user to delete
+    const updatedUsers = users.filter(u => u.username !== username);
+
+    if (users.length === updatedUsers.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Save updated users list
+    fs.writeFileSync(USERS_FILE, JSON.stringify(updatedUsers, null, 2));
+
+    console.log("User deleted successfully:", username);
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
+// API endpoint to get history
+app.get("/api/history", (req, res) => {
+  try {
+    let history = [];
+    if (fs.existsSync(HISTORY_FILE)) {
+      history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
+    }
+
+    // Sort by date descending and limit to 7 days
+    const last7Days = history
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 7);
+
+    res.json({ history: last7Days });
+  } catch (error) {
+    console.error("Error loading history:", error);
+    res.status(500).json({ error: "Failed to load history" });
   }
 });
 
