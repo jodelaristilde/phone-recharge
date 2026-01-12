@@ -120,13 +120,12 @@ const AdminDashboard = () => {
   const completedCount = requests.filter(req => req.completed).length;
 
   const getCustomerURL = () => {
-    const baseURL = window.location.href.split('?')[0].replace('/admin/dashboard', '').replace('/admin', '');
-    return baseURL;
+    return 'https://www.zinpete.com/customer';
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/admin');
+    navigate('/');
   };
 
   const loadHistory = async () => {

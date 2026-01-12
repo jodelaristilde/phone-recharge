@@ -1,19 +1,4 @@
 {
-  "requests": [
-    {
-      "id": 1768236203243,
-      "phoneNumber": "1111111111111",
-      "amount": 55,
-      "timestamp": "9:43:23 PM",
-      "completed": true
-    },
-    {
-      "id": 1768237479182,
-      "phoneNumber": "11111111111",
-      "amount": 55,
-      "timestamp": "10:04:39 PM",
-      "completed": true
-    }
-  ],
-  "date": "1/12/2026"
+  "requests": [],
+  "date": "1/13/2026"
 }

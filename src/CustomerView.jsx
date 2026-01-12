@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { DollarSign, Phone, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { DollarSign, Phone } from 'lucide-react';
 
 const CustomerView = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState({ type: '', message: '' });
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   const loadRequests = async () => {
     try {
@@ -130,22 +128,12 @@ const CustomerView = () => {
           </div>
 
           {status.message && (
-            <div className={"mt-6 p-4 rounded-lg border " + (status.type === 'success' 
-              ? 'bg-green-900 bg-opacity-50 border-green-600 text-green-100' 
+            <div className={"mt-6 p-4 rounded-lg border " + (status.type === 'success'
+              ? 'bg-green-900 bg-opacity-50 border-green-600 text-green-100'
               : 'bg-red-900 bg-opacity-50 border-red-600 text-red-100')}>
               <p className="text-center font-medium">{status.message}</p>
             </div>
           )}
-
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <button
-              onClick={() => navigate('/admin')}
-              className="w-full px-4 py-2 bg-gray-700 text-orange-400 rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium border border-orange-600 flex items-center justify-center gap-2"
-            >
-              <User className="w-4 h-4" />
-              Admin Login
-            </button>
-          </div>
         </div>
       </div>
     </div>
