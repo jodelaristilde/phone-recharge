@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus } from 'lucide-react';
+import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus, Key } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 const AdminDashboard = () => {
@@ -20,6 +20,12 @@ const AdminDashboard = () => {
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetUsername, setResetUsername] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
   const navigate = useNavigate();
   const { logout, currentUser } = useAuth();
 
@@ -209,6 +215,48 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleShowResetPassword = (username) => {
+    setResetUsername(username);
+    setResetPassword('');
+    setResetError('');
+    setResetSuccess('');
+    setShowResetPassword(true);
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+    setIsResetting(true);
+
+    try {
+      const response = await fetch('/api/admin/users/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: resetUsername, newPassword: resetPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResetSuccess('Password updated successfully!');
+        setResetPassword('');
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          setShowResetPassword(false);
+          setResetSuccess('');
+        }, 2000);
+      } else {
+        setResetError(data.error || 'Failed to update password');
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setResetError('Failed to connect to server');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-6xl mx-auto">
@@ -335,7 +383,7 @@ const AdminDashboard = () => {
               <thead className="bg-gray-700 border-b-2 border-orange-600">
                 <tr>
                   <th className="px-4 py-4 text-center text-sm font-semibold text-orange-400 w-16">Select</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Date & Time</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Phone Number</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Amount</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Status</th>
@@ -412,7 +460,7 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between p-6 border-b border-gray-700">
                 <h2 className="text-2xl font-bold text-orange-400 flex items-center gap-2">
                   <History className="w-6 h-6" />
-                  Last 7 Days History
+                  Last 30 Days History
                 </h2>
                 <button
                   onClick={() => setShowHistory(false)}
@@ -560,13 +608,22 @@ const AdminDashboard = () => {
                               </p>
                             </div>
                             {currentUser === 'admin' && (
-                              <button
-                                onClick={() => handleDeleteUser(user.username)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleShowResetPassword(user.username)}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+                                >
+                                  <Key className="w-4 h-4" />
+                                  Reset Password
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(user.username)}
+                                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -574,6 +631,86 @@ const AdminDashboard = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showResetPassword && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg shadow-lg max-w-md w-full border border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <h2 className="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                  <Key className="w-6 h-6" />
+                  Reset Password
+                </h2>
+                <button
+                  onClick={() => setShowResetPassword(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-blue-400 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={resetUsername}
+                      disabled
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-gray-400 rounded-lg cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-blue-400 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      placeholder="Enter new password (min 6 characters)"
+                      className="w-full px-4 py-2 bg-gray-600 border border-gray-500 text-white rounded-lg focus:border-blue-500 focus:outline-none"
+                      disabled={isResetting}
+                      autoFocus
+                    />
+                  </div>
+
+                  {resetError && (
+                    <div className="p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-lg">
+                      <p className="text-center text-red-100 text-sm">{resetError}</p>
+                    </div>
+                  )}
+
+                  {resetSuccess && (
+                    <div className="p-3 bg-green-900 bg-opacity-50 border border-green-600 rounded-lg">
+                      <p className="text-center text-green-100 text-sm">{resetSuccess}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(false)}
+                      className="flex-1 bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResetting}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Key className="w-5 h-5" />
+                      {isResetting ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

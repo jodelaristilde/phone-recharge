@@ -10,27 +10,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const auth = sessionStorage.getItem("adminAuthenticated");
     const user = sessionStorage.getItem("currentUser");
-    console.log("AuthContext: Checking sessionStorage on mount", { auth, user });
     if (auth === "true") {
-      console.log("AuthContext: Restoring authentication");
       setIsAuthenticated(true);
       setCurrentUser(user);
-    } else {
-      console.log("AuthContext: No valid auth found");
     }
     setIsLoading(false);
   }, []);
 
   const login = (username) => {
-    console.log("AuthContext: Login called with username:", username);
     sessionStorage.setItem("adminAuthenticated", "true");
     sessionStorage.setItem("currentUser", username);
     setIsAuthenticated(true);
     setCurrentUser(username);
-    console.log("AuthContext: Login complete, sessionStorage:", {
-      auth: sessionStorage.getItem("adminAuthenticated"),
-      user: sessionStorage.getItem("currentUser")
-    });
   };
 
   const logout = () => {

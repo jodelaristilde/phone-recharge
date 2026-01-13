@@ -177,6 +177,51 @@ app.delete("/api/admin/users", (req, res) => {
   }
 });
 
+// API endpoint to update user password
+app.put("/api/admin/users/password", (req, res) => {
+  try {
+    const { username, newPassword } = req.body;
+
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: "Username and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    if (!fs.existsSync(USERS_FILE)) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get existing users
+    let users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+
+    // Find the user
+    const userIndex = users.findIndex(u => u.username === username);
+
+    if (userIndex === -1) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Hash new password
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+    // Update user password
+    users[userIndex].password = hashedPassword;
+    users[userIndex].passwordUpdatedAt = new Date().toISOString();
+
+    // Save updated users list
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+    console.log("Password updated successfully for user:", username);
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ error: "Failed to update password" });
+  }
+});
+
 // API endpoint to get history
 app.get("/api/history", (req, res) => {
   try {
@@ -185,12 +230,12 @@ app.get("/api/history", (req, res) => {
       history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
     }
 
-    // Sort by date descending and limit to 7 days
-    const last7Days = history
+    // Sort by date descending and limit to 30 days
+    const last30Days = history
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 7);
+      .slice(0, 30);
 
-    res.json({ history: last7Days });
+    res.json({ history: last30Days });
   } catch (error) {
     console.error("Error loading history:", error);
     res.status(500).json({ error: "Failed to load history" });
@@ -272,11 +317,6 @@ app.post("/api/cron/daily-reset", (req, res) => {
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// Serve test page
-app.get("/test-reset.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "test-reset.html"));
 });
 
 // Serve static files from dist directory

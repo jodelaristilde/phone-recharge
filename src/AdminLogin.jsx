@@ -46,7 +46,7 @@ const AdminLogin = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-600 rounded-full mb-4">
               <Lock className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-orange-400 mb-2">Admin Login</h1>
+            <h1 className="text-2xl font-bold text-orange-400 mb-2">User Login</h1>
             <p className="text-gray-300">Enter your credentials to access the dashboard</p>
           </div>
 

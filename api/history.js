@@ -17,15 +17,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get history data (last 7 days)
+    // Get history data (last 30 days)
     const history = await kv.get('phone-recharge-history') || [];
 
-    // Sort by date descending and limit to 7 days
-    const last7Days = history
+    // Sort by date descending and limit to 30 days
+    const last30Days = history
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 7);
+      .slice(0, 30);
 
-    return res.json({ history: last7Days });
+    return res.json({ history: last30Days });
   } catch (error) {
     console.error('Error fetching history:', error);
     return res.status(500).json({ error: 'Failed to fetch history' });

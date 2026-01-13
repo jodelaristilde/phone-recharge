@@ -53,7 +53,7 @@ const CustomerView = () => {
         id: Date.now(),
         phoneNumber,
         amount: parseFloat(amount),
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleString(),
         completed: false
       };
 
