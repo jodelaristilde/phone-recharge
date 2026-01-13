@@ -5,7 +5,8 @@
   "crons": [
     {
       "path": "/api/cron/daily-reset",
-      "schedule": "0 3 * * *"
+      "schedule": "0 3 * * *",
+      "timezone": "America/New_York"
     }
   ],
   "rewrites": [
