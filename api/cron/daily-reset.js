@@ -8,10 +8,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Running daily reset cron job...');
+    // Check if it's 3 AM in Eastern Time
+    const now = new Date();
+    const easternTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const easternHour = easternTime.getHours();
+
+    if (easternHour !== 3) {
+      console.log(`Skipping reset - current Eastern hour is ${easternHour}, not 3 AM`);
+      return res.json({
+        success: true,
+        message: 'Skipped - not 3 AM Eastern Time',
+        easternHour: easternHour,
+        timestamp: now.toISOString()
+      });
+    }
+
+    console.log('Running daily reset cron job at 3 AM Eastern...');
 
     // Get current data
     const currentData = await kv.get('phone-recharge-data');
+
+    // Check if we've already reset today (safety check to prevent duplicate resets)
+    const todayEastern = easternTime.toLocaleDateString('en-US');
+    if (currentData && currentData.date === todayEastern && currentData.requests.length === 0) {
+      console.log('Already reset today - skipping');
+      return res.json({
+        success: true,
+        message: 'Already reset today',
+        date: todayEastern,
+        timestamp: now.toISOString()
+      });
+    }
 
     if (currentData && currentData.requests && currentData.requests.length > 0) {
       // Calculate total sold for the day
@@ -42,10 +69,9 @@ export default async function handler(req, res) {
     }
 
     // Reset current data
-    const today = new Date().toLocaleDateString();
     await kv.set('phone-recharge-data', {
       requests: [],
-      date: today
+      date: todayEastern
     });
 
     console.log('Daily reset completed successfully');
