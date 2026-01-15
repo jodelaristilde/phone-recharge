@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus, Key } from 'lucide-react';
+import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus, Key, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 const AdminDashboard = () => {
@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [expandedHistoryDates, setExpandedHistoryDates] = useState({});
   const [showUsers, setShowUsers] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -257,6 +258,13 @@ const AdminDashboard = () => {
     }
   };
 
+  const toggleHistoryEntry = (date) => {
+    setExpandedHistoryDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-6xl mx-auto">
@@ -458,9 +466,9 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-700">
               <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-2xl font-bold text-orange-400 flex items-center gap-2">
+<h2 className="text-2xl font-bold text-orange-400 flex items-center gap-2">
                   <History className="w-6 h-6" />
-                  Last 30 Days History
+                  Last 15 Days History
                 </h2>
                 <button
                   onClick={() => setShowHistory(false)}
@@ -480,10 +488,14 @@ const AdminDashboard = () => {
                     {history.map((entry, index) => (
                       <div
                         key={index}
-                        className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-orange-600 transition-colors"
+                        className="bg-gray-700 rounded-lg border border-gray-600 hover:border-orange-600 transition-colors overflow-hidden"
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
+                        {/* Clickable header - always visible */}
+                        <button
+                          onClick={() => toggleHistoryEntry(entry.date)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-gray-650 transition-colors"
+                        >
+                          <div className="text-left">
                             <p className="text-white font-semibold text-lg flex items-center gap-2">
                               <Calendar className="w-5 h-5 text-orange-400" />
                               {entry.date}
@@ -492,13 +504,88 @@ const AdminDashboard = () => {
                               {entry.totalRequests || 0} request(s)
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-orange-400 font-semibold mb-1">Total Sold</p>
-                            <p className="text-3xl font-bold text-white">
-                              ${(entry.totalSold || 0).toFixed(2)}
-                            </p>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="text-sm text-orange-400 font-semibold mb-1">Total Sold</p>
+                              <p className="text-3xl font-bold text-white">
+                                ${(entry.totalSold || 0).toFixed(2)}
+                              </p>
+                            </div>
+                            {/* Expand/collapse icon */}
+                            {expandedHistoryDates[entry.date] ? (
+                              <ChevronUp className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronDown className="w-6 h-6 text-gray-400 flex-shrink-0" />
+                            )}
                           </div>
-                        </div>
+                        </button>
+
+                        {/* Expanded content - individual requests table */}
+                        {expandedHistoryDates[entry.date] && (
+                          <div className="border-t border-gray-600 bg-gray-750">
+                            {/* Check if individual requests are available */}
+                            {entry.requests && entry.requests.length > 0 ? (
+                              <div className="p-4">
+                                <h4 className="text-sm font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                                  <CheckCircle className="w-4 h-4" />
+                                  Individual Requests
+                                </h4>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead className="bg-gray-600">
+                                      <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-orange-400">Time</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-orange-400">Phone Number</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-orange-400">Amount</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-orange-400">Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {entry.requests.map((req) => (
+                                        <tr
+                                          key={req.id}
+                                          className="border-b border-gray-600 hover:bg-gray-650 transition-colors"
+                                        >
+                                          <td className="px-4 py-3 text-sm text-gray-300">
+                                            {req.timestamp}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm font-medium text-white">
+                                            {req.phoneNumber}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm font-semibold text-orange-400">
+                                            ${(req.amount || 0).toFixed(2)}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {req.completed ? (
+                                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-700 text-green-100 rounded-full text-xs font-medium">
+                                                <CheckCircle className="w-3 h-3" />
+                                                Complete
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center px-2 py-1 bg-yellow-700 text-yellow-100 rounded-full text-xs font-medium">
+                                                Pending
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ) : (
+                              /* Backward compatibility: no individual requests available */
+                              <div className="p-8 text-center">
+                                <p className="text-gray-400 text-sm">
+                                  Individual requests not available for this date
+                                </p>
+                                <p className="text-gray-500 text-xs mt-1">
+                                  (This entry was created before the individual requests feature)
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

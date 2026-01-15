@@ -222,7 +222,7 @@ app.put("/api/admin/users/password", (req, res) => {
   }
 });
 
-// API endpoint to get history
+// API endpoint to get history (includes aggregated data and individual requests)
 app.get("/api/history", (req, res) => {
   try {
     let history = [];
@@ -230,19 +230,19 @@ app.get("/api/history", (req, res) => {
       history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
     }
 
-    // Sort by date descending and limit to 30 days
-    const last30Days = history
+    // Sort by date descending and limit to 15 days
+    const last15Days = history
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 30);
+      .slice(0, 15);
 
-    res.json({ history: last30Days });
+    res.json({ history: last15Days });
   } catch (error) {
     console.error("Error loading history:", error);
     res.status(500).json({ error: "Failed to load history" });
   }
 });
 
-// API endpoint for daily reset (cron job)
+// API endpoint for daily reset (cron job) - stores aggregated data and individual requests
 app.post("/api/cron/daily-reset", (req, res) => {
   try {
     // Verify cron secret
@@ -272,23 +272,33 @@ app.post("/api/cron/daily-reset", (req, res) => {
         history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
       }
 
-      // Add today's data to history
+      // Store individual requests for detailed history
+      const sanitizedRequests = currentData.requests.map(req => ({
+        id: req.id,
+        phoneNumber: req.phoneNumber,
+        amount: req.amount,
+        timestamp: req.timestamp,
+        completed: req.completed
+      }));
+
+      // Create history entry with aggregated data and individual requests
       const historyEntry = {
         date: currentData.date || new Date().toLocaleDateString(),
         totalSold: totalSold,
         totalRequests: currentData.requests.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        requests: sanitizedRequests
       };
 
       history.push(historyEntry);
 
-      // Keep only last 30 days of history
-      const last30Days = history
+      // Keep only last 15 days of history
+      const last15Days = history
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 30);
+        .slice(0, 15);
 
       // Save updated history
-      fs.writeFileSync(HISTORY_FILE, JSON.stringify(last30Days, null, 2));
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(last15Days, null, 2));
 
       console.log("History saved:", historyEntry);
     }
