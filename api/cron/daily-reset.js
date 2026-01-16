@@ -47,23 +47,33 @@ export default async function handler(req, res) {
       // Get existing history
       const history = await kv.get('phone-recharge-history') || [];
 
-      // Add today's data to history
+      // Store individual requests for detailed history
+      const sanitizedRequests = currentData.requests.map(req => ({
+        id: req.id,
+        phoneNumber: req.phoneNumber,
+        amount: req.amount,
+        timestamp: req.timestamp,
+        completed: req.completed
+      }));
+
+      // Create history entry with aggregated data and individual requests
       const historyEntry = {
         date: currentData.date || new Date().toLocaleDateString(),
         totalSold: totalSold,
         totalRequests: currentData.requests.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        requests: sanitizedRequests
       };
 
       history.push(historyEntry);
 
-      // Keep only last 30 days of history (in case we want to extend later)
-      const last30Days = history
+      // Keep only last 15 days of history
+      const last15Days = history
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 30);
+        .slice(0, 15);
 
       // Save updated history
-      await kv.set('phone-recharge-history', last30Days);
+      await kv.set('phone-recharge-history', last15Days);
 
       console.log('History saved:', historyEntry);
     }

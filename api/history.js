@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get history data (last 30 days)
+    // Get history data (last 15 days)
     const history = await kv.get('phone-recharge-history') || [];
 
     // Sort by date descending and limit to 15 days
