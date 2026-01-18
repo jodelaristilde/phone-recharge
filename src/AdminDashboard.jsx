@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus, Key, ChevronDown, ChevronUp } from 'lucide-react';
+import { QrCode, CheckCircle, Calendar, LogOut, Trash2, CheckSquare, Square, History, X, Users, UserPlus, Key, ChevronDown, ChevronUp, Clipboard } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 const AdminDashboard = () => {
@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   const navigate = useNavigate();
   const { logout, currentUser } = useAuth();
 
@@ -63,6 +64,14 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error saving requests:', error);
     }
+  };
+
+  const handleCopy = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
   };
 
   const toggleComplete = async (id) => {
@@ -392,6 +401,7 @@ const AdminDashboard = () => {
                 <tr>
                   <th className="px-4 py-4 text-center text-sm font-semibold text-orange-400 w-16">Select</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Date & Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Phone Number</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Amount</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-orange-400">Status</th>
@@ -401,7 +411,7 @@ const AdminDashboard = () => {
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
                       No requests yet today
                     </td>
                   </tr>
@@ -428,7 +438,22 @@ const AdminDashboard = () => {
                         </button>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-300">{req.timestamp}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-white">{req.phoneNumber}</td>
+                      <td className="px-6 py-4 text-sm text-white">{req.name}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-white">
+                        <div className="flex items-center gap-2">
+                          <span>{req.phoneNumber}</span>
+                          <button
+                            onClick={() => handleCopy(req.phoneNumber, req.id)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            {copiedId === req.id ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <Clipboard className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-sm font-semibold text-orange-400">${(req.amount || 0).toFixed(2)}</td>
                       <td className="px-6 py-4">
                         {req.completed ? (

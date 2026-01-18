@@ -96,6 +96,13 @@ const AdminLogin = () => {
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/customer')}
+              className="w-full bg-gray-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-gray-700 transition-colors shadow-lg"
+            >
+              Customer View
+            </button>
           </form>
         </div>
       </div>

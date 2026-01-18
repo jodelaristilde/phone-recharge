@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { DollarSign, Phone } from 'lucide-react';
+import { DollarSign, Phone, User } from 'lucide-react';
 
 const CustomerView = () => {
+  const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -31,7 +32,7 @@ const CustomerView = () => {
   };
 
   const handleCustomerSubmit = async () => {
-    if (!phoneNumber || !amount) {
+    if (!name || !phoneNumber || !amount) {
       setStatus({ type: 'error', message: 'Please fill in all fields' });
       return;
     }
@@ -51,6 +52,7 @@ const CustomerView = () => {
       
       const newRequest = {
         id: Date.now(),
+        name,
         phoneNumber,
         amount: parseFloat(amount),
         timestamp: new Date().toLocaleString(),
@@ -60,6 +62,7 @@ const CustomerView = () => {
       const updatedRequests = [...existingRequests, newRequest];
       await saveRequests(updatedRequests);
 
+      setName('');
       setPhoneNumber('');
       setAmount('');
       setStatus({ type: 'success', message: 'Request submitted successfully!' });
@@ -87,6 +90,22 @@ const CustomerView = () => {
           </div>
 
           <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-orange-400 mb-2">
+                Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white rounded-lg focus:border-orange-500 focus:outline-none text-lg placeholder-gray-400"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-orange-400 mb-2">
                 Phone Number
