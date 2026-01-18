@@ -22,7 +22,11 @@ export default async function handler(req, res) {
 
     // Sort by date descending and limit to 15 days
     const last15Days = history
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => {
+        const [aMonth, aDay, aYear] = a.date.split('/');
+        const [bMonth, bDay, bYear] = b.date.split('/');
+        return new Date(`${bYear}-${bMonth}-${bDay}`) - new Date(`${aYear}-${aMonth}-${aDay}`);
+      })
       .slice(0, 15);
 
     return res.json({ history: last15Days });

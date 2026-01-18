@@ -13,11 +13,11 @@ export default async function handler(req, res) {
     const easternTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
     const easternHour = easternTime.getHours();
 
-    if (easternHour !== 3) {
-      console.log(`Skipping reset - current Eastern hour is ${easternHour}, not 3 AM`);
+    if (easternHour !== 3 && easternHour !== 4) {
+      console.log(`Skipping reset - current Eastern hour is ${easternHour}, not 3 or 4 AM`);
       return res.json({
         success: true,
-        message: 'Skipped - not 3 AM Eastern Time',
+        message: 'Skipped - not 3 or 4 AM Eastern Time',
         easternHour: easternHour,
         timestamp: now.toISOString()
       });
@@ -69,7 +69,11 @@ export default async function handler(req, res) {
 
       // Keep only last 15 days of history
       const last15Days = history
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .sort((a, b) => {
+          const [aMonth, aDay, aYear] = a.date.split('/');
+          const [bMonth, bDay, bYear] = b.date.split('/');
+          return new Date(`${bYear}-${bMonth}-${bDay}`) - new Date(`${aYear}-${aMonth}-${aDay}`);
+        })
         .slice(0, 15);
 
       // Save updated history
