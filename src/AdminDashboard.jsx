@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState([]);
-  const [currentDate, setCurrentDate] = useState(new Date().toLocaleDateString());
+  const [currentDate, setCurrentDate] = useState(new Date().toLocaleDateString('en-GB'));
   const [showQR, setShowQR] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
       const response = await fetch('/api/requests');
       const data = await response.json();
       setRequests(data.requests || []);
-      setCurrentDate(data.date || new Date().toLocaleDateString());
+      setCurrentDate(data.date || new Date().toLocaleDateString('en-GB'));
       setSelectedIds([]);
     } catch (error) {
       console.log('No existing requests found');
@@ -716,7 +716,7 @@ const AdminDashboard = () => {
                                 {user.username}
                               </p>
                               <p className="text-gray-400 text-sm mt-1">
-                                Created: {new Date(user.createdAt).toLocaleDateString()}
+                                Created: {new Date(user.createdAt).toLocaleDateString('en-GB')}
                               </p>
                             </div>
                             {currentUser === 'admin' && (

@@ -232,7 +232,11 @@ app.get("/api/history", (req, res) => {
 
     // Sort by date descending and limit to 15 days
     const last15Days = history
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => {
+        const [aDay, aMonth, aYear] = a.date.split('/').map(Number);
+        const [bDay, bMonth, bYear] = b.date.split('/').map(Number);
+        return new Date(bYear, bMonth - 1, bDay) - new Date(aYear, aMonth - 1, aDay);
+      })
       .slice(0, 15);
 
     res.json({ history: last15Days });
@@ -283,7 +287,7 @@ app.post("/api/cron/daily-reset", (req, res) => {
 
       // Create history entry with aggregated data and individual requests
       const historyEntry = {
-        date: currentData.date || new Date().toLocaleDateString(),
+        date: currentData.date || new Date().toLocaleDateString('en-GB'),
         totalSold: totalSold,
         totalRequests: currentData.requests.length,
         timestamp: new Date().toISOString(),
@@ -294,7 +298,11 @@ app.post("/api/cron/daily-reset", (req, res) => {
 
       // Keep only last 15 days of history
       const last15Days = history
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .sort((a, b) => {
+          const [aDay, aMonth, aYear] = a.date.split('/').map(Number);
+          const [bDay, bMonth, bYear] = b.date.split('/').map(Number);
+          return new Date(bYear, bMonth - 1, bDay) - new Date(aYear, aMonth - 1, aDay);
+        })
         .slice(0, 15);
 
       // Save updated history
@@ -304,7 +312,7 @@ app.post("/api/cron/daily-reset", (req, res) => {
     }
 
     // Reset current data
-    const today = new Date().toLocaleDateString();
+    const today = new Date().toLocaleDateString('en-GB');
     const resetData = {
       requests: [],
       date: today

@@ -6,7 +6,7 @@ const PhoneRechargeSystem = () => {
   const [requests, setRequests] = useState([]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amount, setAmount] = useState('');
-  const [currentDate, setCurrentDate] = useState(new Date().toLocaleDateString());
+  const [currentDate, setCurrentDate] = useState(new Date().toLocaleDateString('en-GB'));
   const [showQR, setShowQR] = useState(false);
   const [showAdminHint, setShowAdminHint] = useState(false);
   const [hoverTimer, setHoverTimer] = useState(null);
@@ -25,7 +25,7 @@ const PhoneRechargeSystem = () => {
   // Check for daily reset
   useEffect(() => {
     const checkDailyReset = async () => {
-      const today = new Date().toLocaleDateString();
+      const today = new Date().toLocaleDateString('en-GB');
       if (currentDate !== today) {
         setRequests([]);
         setCurrentDate(today);
@@ -52,7 +52,7 @@ const PhoneRechargeSystem = () => {
       if (result && result.value) {
         const data = JSON.parse(result.value);
         setRequests(data.requests || []);
-        setCurrentDate(data.date || new Date().toLocaleDateString());
+        setCurrentDate(data.date || new Date().toLocaleDateString('en-GB'));
       }
     } catch (error) {
       console.log('No existing requests found');

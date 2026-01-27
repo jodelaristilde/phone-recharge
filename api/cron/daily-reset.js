@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const currentData = await kv.get('phone-recharge-data');
 
     // Check if we've already reset today (safety check to prevent duplicate resets)
-    const todayEastern = easternTime.toLocaleDateString('en-US');
+    const todayEastern = easternTime.toLocaleDateString('en-GB');
     if (currentData && currentData.date === todayEastern && currentData.requests.length === 0) {
       console.log('Already reset today - skipping');
       return res.json({
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
       // Create history entry with aggregated data and individual requests
       const historyEntry = {
-        date: currentData.date || new Date().toLocaleDateString(),
+        date: currentData.date || new Date().toLocaleDateString('en-GB'),
         totalSold: totalSold,
         totalRequests: currentData.requests.length,
         timestamp: new Date().toISOString(),
@@ -70,9 +70,10 @@ export default async function handler(req, res) {
       // Keep only last 15 days of history
       const last15Days = history
         .sort((a, b) => {
-          const [aMonth, aDay, aYear] = a.date.split('/');
-          const [bMonth, bDay, bYear] = b.date.split('/');
-          return new Date(`${bYear}-${bMonth}-${bDay}`) - new Date(`${aYear}-${aMonth}-${aDay}`);
+          // Robustly parse D/M/YYYY
+          const [aDay, aMonth, aYear] = a.date.split('/').map(Number);
+          const [bDay, bMonth, bYear] = b.date.split('/').map(Number);
+          return new Date(bYear, bMonth - 1, bDay) - new Date(aYear, aMonth - 1, aDay);
         })
         .slice(0, 15);
 
