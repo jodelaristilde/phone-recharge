@@ -20,13 +20,12 @@ export default async function handler(req, res) {
     // Get history data (last 15 days)
     const history = await kv.get('phone-recharge-history') || [];
 
-    // Sort by date descending and limit to 15 days
+    // Sort newest first by the reset timestamp (ISO, unambiguous).
+    // The date strings are a mix of M/D/YYYY and D/M/YYYY, so don't sort on them.
+    const toTime = (entry) => new Date(entry.timestamp || 0).getTime() || 0;
+
     const last15Days = history
-      .sort((a, b) => {
-        const [aMonth, aDay, aYear] = a.date.split('/');
-        const [bMonth, bDay, bYear] = b.date.split('/');
-        return new Date(`${bYear}-${bMonth}-${bDay}`) - new Date(`${aYear}-${aMonth}-${aDay}`);
-      })
+      .sort((a, b) => toTime(b) - toTime(a))
       .slice(0, 15);
 
     return res.json({ history: last15Days });

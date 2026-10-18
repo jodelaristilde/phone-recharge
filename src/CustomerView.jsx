@@ -12,19 +12,21 @@ const CustomerView = () => {
     try {
       const response = await fetch('/api/requests');
       const data = await response.json();
-      return data.requests || [];
+      return { requests: data.requests || [], date: data.date || '' };
     } catch (error) {
-      return [];
+      return { requests: [], date: '' };
     }
   };
 
-  const saveRequests = async (updatedRequests) => {
-    const today = new Date().toLocaleDateString();
+  const saveRequests = async (updatedRequests, existingDate) => {
+    // Keep the day's date as set by the admin/cron (D/M/YYYY, Eastern time).
+    // Never overwrite it with the customer's browser locale format.
+    const date = existingDate || new Date().toLocaleDateString('en-GB', { timeZone: 'America/New_York' });
     try {
       await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requests: updatedRequests, date: today })
+        body: JSON.stringify({ requests: updatedRequests, date })
       });
     } catch (error) {
       console.error('Error saving requests:', error);
@@ -48,7 +50,7 @@ const CustomerView = () => {
     setStatus({ type: '', message: '' });
     
     try {
-      const existingRequests = await loadRequests();
+      const { requests: existingRequests, date: existingDate } = await loadRequests();
       
       const newRequest = {
         id: Date.now(),
@@ -60,7 +62,7 @@ const CustomerView = () => {
       };
 
       const updatedRequests = [...existingRequests, newRequest];
-      await saveRequests(updatedRequests);
+      await saveRequests(updatedRequests, existingDate);
 
       setName('');
       setPhoneNumber('');
