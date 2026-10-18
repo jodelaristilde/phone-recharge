@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
       // Create history entry with aggregated data and individual requests
       const historyEntry = {
-        date: currentData.date || new Date().toLocaleDateString('en-GB'),
+        date: currentData.date || todayEastern,
         totalSold: totalSold,
         totalRequests: currentData.requests.length,
         timestamp: new Date().toISOString(),
@@ -69,12 +69,9 @@ export default async function handler(req, res) {
 
       // Keep only last 15 days of history
       const last15Days = history
-        .sort((a, b) => {
-          // Robustly parse D/M/YYYY
-          const [aDay, aMonth, aYear] = a.date.split('/').map(Number);
-          const [bDay, bMonth, bYear] = b.date.split('/').map(Number);
-          return new Date(bYear, bMonth - 1, bDay) - new Date(aYear, aMonth - 1, aDay);
-        })
+        // Sort newest first by reset timestamp (ISO, unambiguous). Sorting on the
+        // date string misread M/D/YYYY dates and discarded each new day's entry.
+        .sort((a, b) => (new Date(b.timestamp || 0).getTime() || 0) - (new Date(a.timestamp || 0).getTime() || 0))
         .slice(0, 15);
 
       // Save updated history
