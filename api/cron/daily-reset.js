@@ -67,15 +67,15 @@ export default async function handler(req, res) {
 
       history.push(historyEntry);
 
-      // Keep only last 15 days of history
-      const last15Days = history
+      // Keep up to ~400 days of history
+      const recentHistory = history
         // Sort newest first by reset timestamp (ISO, unambiguous). Sorting on the
         // date string misread M/D/YYYY dates and discarded each new day's entry.
         .sort((a, b) => (new Date(b.timestamp || 0).getTime() || 0) - (new Date(a.timestamp || 0).getTime() || 0))
-        .slice(0, 15);
+        .slice(0, 400);
 
       // Save updated history
-      await kv.set('phone-recharge-history', last15Days);
+      await kv.set('phone-recharge-history', recentHistory);
 
       console.log('History saved:', historyEntry);
     }

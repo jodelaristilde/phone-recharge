@@ -17,18 +17,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get history data (last 15 days)
+    // Get history data (up to ~400 days)
     const history = await kv.get('phone-recharge-history') || [];
 
     // Sort newest first by the reset timestamp (ISO, unambiguous).
     // The date strings are a mix of M/D/YYYY and D/M/YYYY, so don't sort on them.
     const toTime = (entry) => new Date(entry.timestamp || 0).getTime() || 0;
 
-    const last15Days = history
+    const recentHistory = history
       .sort((a, b) => toTime(b) - toTime(a))
-      .slice(0, 15);
+      .slice(0, 400);
 
-    return res.json({ history: last15Days });
+    return res.json({ history: recentHistory });
   } catch (error) {
     console.error('Error fetching history:', error);
     return res.status(500).json({ error: 'Failed to fetch history' });
